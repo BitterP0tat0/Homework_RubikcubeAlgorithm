@@ -1,7 +1,7 @@
 import heapq
 from collections import deque
 from typing import List, Optional, Set
-from src.rubiks_cube.cube import RubiksCube, Move, inverse_move
+from cube import RubiksCube, Move, inverse_move
 
 class Node:
     def __init__(self, cube: RubiksCube, parent=None, move=None, cost=0):
@@ -22,7 +22,6 @@ class Node:
         moves.reverse()
         return moves
 
-
 def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
     stack = [Node(start_cube)]
     visited: Set[str] = set()
@@ -35,9 +34,18 @@ def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         visited.add(state)
 
         if node.cube.is_solved():
-            print(f"DFS found solution at depth {node.cost}, path length: {len(node.path())}")
-            print("DFS path:", node.path())
-            return node.path()
+            path = node.path()
+            print(f"DFS found solution at depth {node.cost}, path length: {len(path)}")
+            print("DFS path:", path)
+            current = start_cube
+            print("Step 0:")
+            print(current)
+            for i, move in enumerate(path):
+                current = copy_cube(current)
+                current.apply_move(move)
+                print(f"Step {i+1}: move {move}")
+                print(current)
+            return path
 
         if node.cost >= max_depth:
             continue
@@ -50,6 +58,8 @@ def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
                 continue
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
+            print(f"DFS trying move {move} at depth {node.cost + 1}")
+            print(new_cube)
             stack.append(Node(new_cube, node, move, node.cost + 1))
 
     print("DFS: no solution found within max depth")
@@ -67,9 +77,20 @@ def bfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         visited.add(state)
 
         if node.cube.is_solved():
-            print(f"BFS found solution at depth {node.cost}, path length: {len(node.path())}")
-            print("BFS path:", node.path())
-            return node.path()
+            path = node.path()
+            print(f"BFS found solution at depth {node.cost}, path length: {len(path)}")
+            print("BFS path:", path)
+
+            current = start_cube
+            print("Step 0:")
+            print(current)
+            for i, move in enumerate(path):
+                current = copy_cube(current)
+                current.apply_move(move)
+                print(f"Step {i+1}: move {move}")
+                print(current)
+
+            return path
 
         if node.cost >= max_depth:
             continue
@@ -80,12 +101,18 @@ def bfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         for move in Move:
             if node.move and move == inverse_move(node.move):
                 continue
+
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
+
+            print(f"BFS trying move {move} at depth {node.cost + 1}")
+            print(new_cube)
+
             queue.append(Node(new_cube, node, move, node.cost + 1))
 
     print("BFS: no solution found within max depth")
     return None
+
 
 def a_star(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
     def heuristic(cube: RubiksCube) -> int:
@@ -109,9 +136,20 @@ def a_star(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         visited.add(state)
 
         if node.cube.is_solved():
-            print(f"A* found solution at depth {node.cost}, path length: {len(node.path())}")
-            print("A* path:", node.path())
-            return node.path()
+            path = node.path()
+            print(f"A* found solution at depth {node.cost}, path length: {len(path)}")
+            print("A* path:", path)
+
+            current = start_cube
+            print("Step 0:")
+            print(current)
+            for i, move in enumerate(path):
+                current = copy_cube(current)
+                current.apply_move(move)
+                print(f"Step {i+1}: move {move}")
+                print(current)
+
+            return path
 
         if node.cost >= max_depth:
             continue
@@ -124,12 +162,17 @@ def a_star(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
                 continue
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
+
+            print(f"A* trying move {move} at depth {node.cost + 1}, heuristic {heuristic(new_cube)}")
+            print(new_cube)
+
             new_node = Node(new_cube, node, move, node.cost + 1)
             new_node.estimated_cost = heuristic(new_cube)
             heapq.heappush(open_heap, new_node)
 
     print("A*: no solution found within max depth")
     return None
+
 
 def copy_cube(cube: RubiksCube) -> RubiksCube:
     new_cube = RubiksCube(cube.size)
