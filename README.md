@@ -16,6 +16,10 @@ And you should run command <poetry update package> for getting packages from dep
 
 In Poetry, all libs are inside of dependencies of Poetry. So if you wanna add anything, type and run poetry add <your library name> eg. poetry add <numpy>
 
+## Run Gui
+
+run <poetry run python -m src.rubiks_cube.gui>
+
 ## Run test case
 
 If you wanna run your test case in poetry, type <poetry run pytest -s tests/"your test name .py">

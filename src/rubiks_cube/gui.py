@@ -1,9 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
-from cube import RubiksCube, Move, Face
-from search import a_star,dfs,bfs
+from .cube import RubiksCube, Face ,Move    
+from .search import a_star, dfs, bfs
+
 import threading
 
+max_depth = 50
 COLOR_MAP = {
     'R': 'red',
     'O': 'orange',
@@ -39,8 +41,8 @@ class RubiksCubeGUI(tk.Tk):
 
         tk.Button(btn_frame, text="Scramble", command=self.scramble).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text="Solve (A*)", command=self.solve_Astar).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="Solve DFS", command=self.solve_Astar).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="Solve BFS", command=self.solve_Astar).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="Solve DFS", command=self.solve_Dfs).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="Solve BFS", command=self.solve_Bfs).pack(side=tk.LEFT, padx=5)
 
 
         self.next_btn = tk.Button(btn_frame, text="Next Step", command=self.next_step, state=tk.DISABLED)
@@ -65,7 +67,7 @@ class RubiksCubeGUI(tk.Tk):
 
     def scramble(self):
         self.cube = RubiksCube(3)
-        self.cube.scramble(10)
+        self.cube.scramble(2)
         self.solution_moves = []
         self.current_step = 0
         self.next_btn.config(state=tk.DISABLED)
@@ -74,9 +76,9 @@ class RubiksCubeGUI(tk.Tk):
     def solve_Astar(self):
         self.next_btn.config(state=tk.DISABLED)
         def run_solver():
-            moves = a_star(self.cube, max_depth=15)
+            moves = a_star(self.cube, max_depth=max_depth)
             if moves is None:
-                messagebox.showinfo("No solution", "No solution found within max depth.")
+                messagebox.showinfo("No solution", f"No solution found within max depth {max_depth}.")
                 return
             self.solution_moves = moves
             self.current_step = 0
@@ -88,18 +90,21 @@ class RubiksCubeGUI(tk.Tk):
     def solve_Dfs(self):
         self.next_btn.config(state=tk.DISABLED)
         def run_solver():
-            moves = dfs(self.cube, max_depth=15)
+            moves = dfs(self.cube, max_depth=max_depth)
+            
             if moves is None:
-                messagebox.showinfo("No solution", "No solution found within max depth.")
+                messagebox.showinfo("No solution", f"No solution found within max depth {max_depth}.")
                 return
             self.solution_moves = moves
             self.current_step = 0
             self.next_btn.config(state=tk.NORMAL)
             messagebox.showinfo("Solution found", f"Solution length: {len(moves)} moves.")
+        threading.Thread(target=run_solver).start()
+
     def solve_Bfs(self):
         self.next_btn.config(state=tk.DISABLED)
         def run_solver():
-            moves = bfs(self.cube, max_depth=15)
+            moves = bfs(self.cube, max_depth=50)
             if moves is None:
                 messagebox.showinfo("No solution", "No solution found within max depth.")
                 return

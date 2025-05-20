@@ -1,7 +1,7 @@
 import heapq
 from collections import deque
 from typing import List, Optional, Set
-from cube import RubiksCube, Move, inverse_move
+from .cube import RubiksCube, Move, inverse_move
 
 class Node:
     def __init__(self, cube: RubiksCube, parent=None, move=None, cost=0):
@@ -22,7 +22,7 @@ class Node:
         moves.reverse()
         return moves
 
-def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
+def dfs(start_cube: RubiksCube, max_depth = 50) -> Optional[List[Move]]:
     stack = [Node(start_cube)]
     visited: Set[str] = set()
 
@@ -48,7 +48,7 @@ def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
             return path
 
         if node.cost >= max_depth:
-            continue
+            break
 
         if node.move:
             print(f"DFS depth {node.cost}, move {node.move}")
@@ -62,7 +62,7 @@ def dfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
             print(new_cube)
             stack.append(Node(new_cube, node, move, node.cost + 1))
 
-    print("DFS: no solution found within max depth")
+    print(f"DFS: no solution found within max depth {node.cost}")
     return None
 
 def bfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
