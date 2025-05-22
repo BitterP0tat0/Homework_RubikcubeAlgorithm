@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
-from .cube import RubiksCube, Face ,Move    
+from .cube import RubiksCube, Face, Move
 from .search import a_star, dfs, bfs
-
 import threading
 
 max_depth = 50
@@ -33,7 +32,7 @@ class RubiksCubeGUI(tk.Tk):
         self.current_step = 0
         self.square_size = 30
 
-        self.canvas = tk.Canvas(self, width=12*self.square_size, height=9*self.square_size)
+        self.canvas = tk.Canvas(self, width=12 * self.square_size, height=9 * self.square_size)
         self.canvas.pack()
 
         btn_frame = tk.Frame(self)
@@ -44,15 +43,15 @@ class RubiksCubeGUI(tk.Tk):
         tk.Button(btn_frame, text="Solve DFS", command=self.solve_Dfs).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text="Solve BFS", command=self.solve_Bfs).pack(side=tk.LEFT, padx=5)
 
-
         self.next_btn = tk.Button(btn_frame, text="Next Step", command=self.next_step, state=tk.DISABLED)
         self.next_btn.pack(side=tk.LEFT, padx=5)
 
         self.draw_cube()
+
     def draw_cube(self):
         self.canvas.delete("all")
         for face_name, (start_x, start_y) in FACE_POS.items():
-            face_enum = getattr(Face, face_name)  
+            face_enum = getattr(Face, face_name)
             face_colors = self.cube.faces[face_enum]
             for i in range(self.cube.size):
                 for j in range(self.cube.size):
@@ -64,10 +63,9 @@ class RubiksCubeGUI(tk.Tk):
                     y1 = y0 + self.square_size
                     self.canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
 
-
     def scramble(self):
         self.cube = RubiksCube(3)
-        self.cube.scramble(2)
+        self.cube.scramble(4)
         self.solution_moves = []
         self.current_step = 0
         self.next_btn.config(state=tk.DISABLED)
@@ -75,44 +73,50 @@ class RubiksCubeGUI(tk.Tk):
 
     def solve_Astar(self):
         self.next_btn.config(state=tk.DISABLED)
+
         def run_solver():
-            moves = a_star(self.cube, max_depth=max_depth)
-            if moves is None:
+            result = a_star(self.cube, max_depth=max_depth)
+            if result is None:
                 messagebox.showinfo("No solution", f"No solution found within max depth {max_depth}.")
                 return
-            self.solution_moves = moves
+            self.solution_moves, _, _ = result
             self.current_step = 0
+            # 不自动应用解，启用“Next Step”按钮
             self.next_btn.config(state=tk.NORMAL)
-            messagebox.showinfo("Solution found", f"Solution length: {len(moves)} moves.")
+            messagebox.showinfo("Solution Ready", f"Solution length: {len(self.solution_moves)} steps.\nClick 'Next Step' to apply moves.")
 
         threading.Thread(target=run_solver).start()
 
     def solve_Dfs(self):
         self.next_btn.config(state=tk.DISABLED)
+
         def run_solver():
-            moves = dfs(self.cube, max_depth=max_depth)
-            
-            if moves is None:
-                messagebox.showinfo("No solution", f"No solution found within max depth {max_depth}.")
+            result = dfs(self.cube, max_depth=15)
+            if result is None:
+                messagebox.showinfo("No solution", "No solution found within max depth.")
                 return
-            self.solution_moves = moves
+            self.solution_moves, _, _ = result
             self.current_step = 0
             self.next_btn.config(state=tk.NORMAL)
-            messagebox.showinfo("Solution found", f"Solution length: {len(moves)} moves.")
+            messagebox.showinfo("Solution Ready", f"Solution length: {len(self.solution_moves)} steps.\nClick 'Next Step' to apply moves.")
+
         threading.Thread(target=run_solver).start()
 
     def solve_Bfs(self):
         self.next_btn.config(state=tk.DISABLED)
+
         def run_solver():
-            moves = bfs(self.cube, max_depth=50)
-            if moves is None:
+            result = bfs(self.cube, max_depth=50)
+            if result is None:
                 messagebox.showinfo("No solution", "No solution found within max depth.")
                 return
-            self.solution_moves = moves
+            self.solution_moves, _, _ = result
             self.current_step = 0
             self.next_btn.config(state=tk.NORMAL)
-            messagebox.showinfo("Solution found", f"Solution length: {len(moves)} moves.")
+            messagebox.showinfo("Solution Ready", f"Solution length: {len(self.solution_moves)} steps.\nClick 'Next Step' to apply moves.")
+
         threading.Thread(target=run_solver).start()
+
     def next_step(self):
         if self.current_step < len(self.solution_moves):
             move = self.solution_moves[self.current_step]
@@ -121,7 +125,7 @@ class RubiksCubeGUI(tk.Tk):
             self.draw_cube()
         if self.current_step == len(self.solution_moves):
             self.next_btn.config(state=tk.DISABLED)
-            messagebox.showinfo("Solved", "Cube solved!")
+            messagebox.showinfo("Solved", "Cube solved step by step!")
 
 if __name__ == "__main__":
     app = RubiksCubeGUI()

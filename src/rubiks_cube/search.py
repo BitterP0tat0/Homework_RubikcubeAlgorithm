@@ -1,4 +1,5 @@
 import heapq
+import time
 from collections import deque
 from typing import List, Optional, Set
 from .cube import RubiksCube, Move, inverse_move
@@ -21,51 +22,48 @@ class Node:
             node = node.parent
         moves.reverse()
         return moves
+def dfs(start_cube: RubiksCube, max_depth) -> Optional[tuple[List[Move], float, int]]:
+    start_time = time.time()
 
-def dfs(start_cube: RubiksCube, max_depth = 50) -> Optional[List[Move]]:
-    stack = [Node(start_cube)]
-    visited: Set[str] = set()
-
-    while stack:
-        node = stack.pop()
-        state = node.cube.get_state()
-        if state in visited:
-            continue
-        visited.add(state)
-
+    def dfs_limited(node: Node, depth_limit: int, visited: Set[str]) -> Optional[Node]:
         if node.cube.is_solved():
-            path = node.path()
-            print(f"DFS found solution at depth {node.cost}, path length: {len(path)}")
-            print("DFS path:", path)
-            current = start_cube
-            print("Step 0:")
-            print(current)
-            for i, move in enumerate(path):
-                current = copy_cube(current)
-                current.apply_move(move)
-                print(f"Step {i+1}: move {move}")
-                print(current)
-            return path
+            return node
+        if node.cost >= depth_limit:
+            return None
 
-        if node.cost >= max_depth:
-            break
-
-        if node.move:
-            print(f"DFS depth {node.cost}, move {node.move}")
+        state = node.cube.get_state()
+        visited.add(state)
 
         for move in Move:
             if node.move and move == inverse_move(node.move):
                 continue
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
-            print(f"DFS trying move {move} at depth {node.cost + 1}")
-            print(new_cube)
-            stack.append(Node(new_cube, node, move, node.cost + 1))
+            new_state = new_cube.get_state()
+            if new_state in visited:
+                continue
+            new_node = Node(new_cube, node, move, node.cost + 1)
+            result = dfs_limited(new_node, depth_limit, visited)
+            if result is not None:
+                return result
+        visited.remove(state)
+        return None
 
-    print(f"DFS: no solution found within max depth {node.cost}")
+    for depth in range(1, max_depth + 1):
+        visited: Set[str] = set()
+        result = dfs_limited(Node(start_cube), depth, visited)
+        if result is not None:
+            time_taken = time.time() - start_time
+            print(f"DFS found solution at depth {depth}, time: {time_taken:.4f} seconds")
+            return result.path(), time_taken, depth
+        print(f"DFS depth {depth} finished without solution")
+
+    time_taken = time.time() - start_time
     return None
 
-def bfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
+
+def bfs(start_cube: RubiksCube, max_depth) -> Optional[tuple[List[Move], float, int]]:
+    start_time = time.time()
     queue = deque([Node(start_cube)])
     visited: Set[str] = set()
 
@@ -77,44 +75,26 @@ def bfs(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         visited.add(state)
 
         if node.cube.is_solved():
-            path = node.path()
-            print(f"BFS found solution at depth {node.cost}, path length: {len(path)}")
-            print("BFS path:", path)
-
-            current = start_cube
-            print("Step 0:")
-            print(current)
-            for i, move in enumerate(path):
-                current = copy_cube(current)
-                current.apply_move(move)
-                print(f"Step {i+1}: move {move}")
-                print(current)
-
-            return path
+            time_taken = time.time() - start_time
+            print(f"BFS found solution at depth {node.cost}, time: {time_taken:.4f} seconds")
+            return node.path(), time_taken, node.cost
 
         if node.cost >= max_depth:
             continue
 
-        if node.move:
-            print(f"BFS depth {node.cost}, move {node.move}")
-
         for move in Move:
             if node.move and move == inverse_move(node.move):
                 continue
-
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
-
-            print(f"BFS trying move {move} at depth {node.cost + 1}")
-            print(new_cube)
-
             queue.append(Node(new_cube, node, move, node.cost + 1))
 
-    print("BFS: no solution found within max depth")
+    time_taken = time.time() - start_time
     return None
 
+def a_star(start_cube: RubiksCube, max_depth) -> Optional[tuple[List[Move], float, int]]:
+    start_time = time.time()
 
-def a_star(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
     def heuristic(cube: RubiksCube) -> int:
         h = 0
         for face in cube.faces.values():
@@ -136,41 +116,23 @@ def a_star(start_cube: RubiksCube, max_depth=15) -> Optional[List[Move]]:
         visited.add(state)
 
         if node.cube.is_solved():
-            path = node.path()
-            print(f"A* found solution at depth {node.cost}, path length: {len(path)}")
-            print("A* path:", path)
-
-            current = start_cube
-            print("Step 0:")
-            print(current)
-            for i, move in enumerate(path):
-                current = copy_cube(current)
-                current.apply_move(move)
-                print(f"Step {i+1}: move {move}")
-                print(current)
-
-            return path
+            time_taken = time.time() - start_time
+            print(f"A* found solution at depth {node.cost}, time: {time_taken:.4f} seconds")
+            return node.path(), time_taken, node.cost
 
         if node.cost >= max_depth:
             continue
-
-        if node.move:
-            print(f"A* depth {node.cost}, move {node.move}, heuristic {heuristic(node.cube)}")
 
         for move in Move:
             if node.move and move == inverse_move(node.move):
                 continue
             new_cube = copy_cube(node.cube)
             new_cube.apply_move(move)
-
-            print(f"A* trying move {move} at depth {node.cost + 1}, heuristic {heuristic(new_cube)}")
-            print(new_cube)
-
             new_node = Node(new_cube, node, move, node.cost + 1)
             new_node.estimated_cost = heuristic(new_cube)
             heapq.heappush(open_heap, new_node)
 
-    print("A*: no solution found within max depth")
+    time_taken = time.time() - start_time
     return None
 
 
